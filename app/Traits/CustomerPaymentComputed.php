@@ -168,6 +168,65 @@ trait CustomerPaymentComputed
         });
     }
 
+    public function hasPipe(): Attribute
+    {
+        return Attribute::get(function () {
+
+            $raw = match ($this->method) {
+                'cheque'  => $this->cheque_no,
+                'slip'    => $this->slip_no,
+                'program' => $this->transaction_id,
+                default   => $this->reff_no,
+            };
+
+            return $raw && str_contains($raw, '|');
+        });
+    }
+
+    public function maxReffSuffix(): Attribute
+    {
+        return Attribute::get(function () {
+
+            $raw = match ($this->method) {
+                'cheque'  => $this->cheque_no,
+                'slip'    => $this->slip_no,
+                'program' => $this->transaction_id,
+                default   => $this->reff_no,
+            };
+
+            if (!$raw) return 0;
+
+            $baseRef = trim(explode('|', $raw)[0]);
+            if (!$baseRef) return 0;
+
+            $query = self::query();
+
+            // 🔑 select correct column
+            $column = match ($this->method) {
+                'cheque'  => 'cheque_no',
+                'slip'    => 'slip_no',
+                'program' => 'transaction_id',
+                default   => 'reff_no',
+            };
+
+            // only refs with same base + pipe
+            $refs = $query
+                ->where($column, 'like', $baseRef . '%|%')
+                ->pluck($column);
+
+            $max = 0;
+
+            foreach ($refs as $ref) {
+                [, $n] = array_map('trim', explode('|', $ref, 2));
+                if (is_numeric($n)) {
+                    $max = max($max, (int)$n);
+                }
+            }
+
+            return $max;
+        });
+    }
+
     public function toFormattedArray()
     {
         return [
@@ -192,6 +251,8 @@ trait CustomerPaymentComputed
             'issued' => $this->issued,
             'status' => $this->status,
             'd_r_no' => $this->dr_no,
+            'has_pipe' => $this->has_pipe,
+            'max_reff_suffix' => $this->max_reff_suffix,
             'oncontextmenu' => "generateContextMenu(event)",
             'onclick' => "generateModal(this)",
         ];
@@ -316,8 +377,31 @@ trait CustomerPaymentComputed
                 });
 
             case 'date':
-                // Date format search: slip_date -> cheque_date -> date
-                return $query->whereRaw("DATE_FORMAT(COALESCE(slip_date, cheque_date, date), '%d-%M-%Y') LIKE ?", ["%$value%"]);
+                $start = $value['start'] ?? null;
+                $end   = $value['end'] ?? null;
+
+                if (!$start || !$end) return $query->where('method', 'cash');
+
+
+                return $query->where(function ($q) use ($start, $end) {
+                    // 1️⃣ slip_date exists
+                    $q->where(function ($q) use ($start, $end) {
+                        $q->whereNotNull('slip_date')
+                        ->whereBetween('slip_date', [$start.' 00:00:00', $end.' 23:59:59']);
+                    })
+                    // 2️⃣ slip_date null, cheque_date exists
+                    ->orWhere(function ($q) use ($start, $end) {
+                        $q->whereNull('slip_date')
+                        ->whereNotNull('cheque_date')
+                        ->whereBetween('cheque_date', [$start.' 00:00:00', $end.' 23:59:59']);
+                    })
+                    // 3️⃣ slip_date null, cheque_date null, fallback to date
+                    ->orWhere(function ($q) use ($start, $end) {
+                        $q->whereNull('slip_date')
+                        ->whereNull('cheque_date')
+                        ->whereBetween('date', [$start.' 00:00:00', $end.' 23:59:59']);
+                    });
+                });
 
             default:
                 return $query->where($key, 'like', "%$value%");

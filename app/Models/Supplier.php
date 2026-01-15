@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Filterable;
+use App\Traits\SupplierComputed;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ class Supplier extends Model
 {
     use HasFactory;
 
-    use Filterable;
+    use Filterable, SupplierComputed;
 
     protected $hidden = [
         'user_id',

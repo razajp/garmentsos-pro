@@ -6,21 +6,23 @@
         "Date Range" => [
             "id" => "date_range_start",
             "type" => "date",
+            "value" => now()->startOfMonth()->toDateString(),
             "id2" => "date_range_end",
             "type2" => "date",
+            "value2" => now()->toDateString(),
             "dataFilterPath" => "date",
         ],
         "Customer Name" => [
             "type" => "text",
             "id" => "customer_name",
             "placeholder" => "Enter customer name",
-            "dataFilterPath" => "name",
+            "dataFilterPath" => "customer_name",
         ],
         "City" => [
             "type" => "text",
             "id" => "city",
             "placeholder" => "Enter city",
-            "dataFilterPath" => "data.customer.city.title",
+            "dataFilterPath" => "city",
         ],
         "Beneficiary" => [
             "type" => "text",
@@ -44,7 +46,7 @@
                         'program' => ['text' => 'Program'],
                         'adjustment' => ['text' => 'Adjustment'],
                     ],
-            "dataFilterPath" => "details.Method",
+            "dataFilterPath" => "method",
         ],
         "Category" => [
             "type" => "select",
@@ -63,7 +65,7 @@
                         'payment_program' => ['text' => 'Payment Program'],
                         'recovery' => ['text' => 'Recovery'],
                     ],
-            "dataFilterPath" => "details.Type",
+            "dataFilterPath" => "type",
         ],
         "Issued" => [
             "type" => "select",
@@ -101,7 +103,7 @@
             "type" => "text",
             "id" => "amount",
             "placeholder" => "Enter Amount",
-            "dataFilterPath" => "details.Amount",
+            "dataFilterPath" => "amount",
         ],
     ];
 @endphp
@@ -222,7 +224,9 @@
         //     };
         // });
 
-        function generateClearModal(data) {
+        function generateClearModal(item) {
+            let data = item;
+
             let modalData = {
                 id: 'clearModal',
                 class: 'h-auto',
@@ -337,16 +341,16 @@
                     (data.data.method === 'slip' && new Date(data.data.slip_date) <= new Date())
                 )
             ) {
-                if (data.data.clear_date == null && data.data.issued == 'Issued') {
+                if (data.clear_date == null && data.issued == 'Issued') {
                     contextMenuData.actions.push(
-                        {id: 'clear', text: 'Clear', onclick: `generateClearModal(${JSON.stringify(data.data)})`},
+                        {id: 'clear', text: 'Clear', onclick: `generateClearModal(${JSON.stringify(data)})`},
                     );
                 }
             }
 
-            if (data.data.issued !== "Issued" && data.data.method !== "cash") {
+            if (data.issued !== "Issued" && data.method !== "cash") {
                 contextMenuData.actions.push(
-                    {id: 'split-payment', text: 'Split Payment', onclick: `generateSplitPaymentModal(${JSON.stringify(data.data)})`},
+                    {id: 'split-payment', text: 'Split Payment', onclick: `generateSplitPaymentModal(${JSON.stringify(data)})`},
                 );
             }
 
@@ -390,16 +394,16 @@
                     (data.data.method === 'slip' && new Date(data.data.slip_date) <= new Date())
                 )
             ) {
-                if (data.data.clear_date == null && data.data.issued == 'Issued') {
+                if (data.clear_date == null && data.issued == 'Issued') {
                     modalData.bottomActions.push(
-                        {id: 'clear', text: 'Clear', onclick: `generateClearModal(${JSON.stringify(data.data)})`},
+                        {id: 'clear', text: 'Clear', onclick: `generateClearModal(${JSON.stringify(data)})`},
                     );
                 }
             }
 
-            if (data.data.issued !== "Issued" && data.data.method !== "cash") {
+            if (data.issued !== "Issued" && data.data.method !== "cash") {
                 modalData.bottomActions.push(
-                    {id: 'split-payment', text: 'Split Payment', onclick: `generateSplitPaymentModal(${JSON.stringify(data.data)})`},
+                    {id: 'split-payment', text: 'Split Payment', onclick: `generateSplitPaymentModal(${JSON.stringify(data)})`},
                 );
             }
 
@@ -425,14 +429,17 @@
             return [current, next];
         }
 
-        function generateSplitPaymentModal(data) {
+        function generateSplitPaymentModal(item) {
+            let data = item.data
             let rawReffNo =
                 data.method === "cheque" ? data.cheque_no :
                 data.method === "slip" ? data.slip_no :
                 data.method === "program" ? data.transaction_id :
                 data.reff_no;
 
-            let [currentRef, newRef] = generateReffNos(rawReffNo, data.has_pipe, data.max_reff_suffix);
+            console.log(item);
+
+            let [currentRef, newRef] = generateReffNos(rawReffNo, item.has_pipe, item.max_reff_suffix);
 
             let modalData = {
                 id: 'splitModalForm',

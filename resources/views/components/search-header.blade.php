@@ -68,7 +68,7 @@
                                     @elseif ($value['type'] == "text")
                                         <x-input label="{{ $search_field }}" id="{{ $value['id'] }}" type="{{ $value['type'] }}" :dataClearable="true" dataFilterPath="{{ $value['dataFilterPath'] }}" required placeholder="{{ $value['placeholder'] }}" />
                                     @elseif (isset($value['type2']) && isset($value['id2']))
-                                        <x-input label="{{ $search_field }}" id="{{ $value['id'] }}" type="{{ $value['type'] }}" dualInput id2="{{ $value['id2'] }}" type2="{{ $value['type2'] }}" :dataClearable="true" dataFilterPath="{{ $value['dataFilterPath'] }}" value="{{ $value['value'] ?? '' }}" required/>
+                                        <x-input label="{{ $search_field }}" id="{{ $value['id'] }}" type="{{ $value['type'] }}" dualInput id2="{{ $value['id2'] }}" type2="{{ $value['type2'] }}" :dataClearable="true" dataFilterPath="{{ $value['dataFilterPath'] }}" value="{{ $value['value'] ?? '' }}" value2="{{ $value['value2'] ?? '' }}" required/>
                                     @else
                                         <x-input label="{{ $search_field }}" id="{{ $value['id'] }}" type="{{ $value['type'] }}" :dataClearable="true" dataFilterPath="{{ $value['dataFilterPath'] }}" value="{{ $value['value'] ?? '' }}" required/>
                                     @endif

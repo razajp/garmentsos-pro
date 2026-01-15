@@ -30,6 +30,7 @@
     'dualInput' => '',
     'type2' => '',
     'id2' => '',
+    'value2' => '',
     'dataFilterPath' => '',
     'dataClearable' => false,
     'parentGrow' => false,
@@ -169,6 +170,7 @@
             <input
                 id="{{ $id2 }}"
                 type="{{ $type2 }}"
+                value="{{ $value2 }}"
                 {{ $attributes->merge([
                     'class' => $class . ' w-full rounded-lg bg-[var(--h-bg-color)] ' .
                         ($errors->has($name) ? 'border-[var(--border-error)]' : 'border-gray-600') .

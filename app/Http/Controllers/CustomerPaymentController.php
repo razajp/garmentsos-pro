@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BankAccount;
 use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\PaymentClear;
 use App\Models\PaymentProgram;
 use App\Models\Setup;
-use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;

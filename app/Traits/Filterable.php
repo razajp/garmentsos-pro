@@ -10,7 +10,15 @@ trait Filterable
     {
         $filters = $request->except(['_token', 'limit', 'page']);
 
-        // 1. Get limit from request, default to null if not provided
+        // Transform date range inputs (dual input fields)
+        if (isset($filters['date_range_start']) && isset($filters['date_range_end'])) {
+            $filters['date'] = [
+                'start' => $filters['date_range_start'],
+                'end' => $filters['date_range_end'],
+            ];
+            unset($filters['date_range_start'], $filters['date_range_end']);
+        }
+
         $limit = $request->get('limit');
 
         foreach ($filters as $key => $value) {
@@ -23,13 +31,10 @@ trait Filterable
             }
         }
 
-        // 2. APPLY LIMIT HERE (Ye missing tha)
-        // Agar limit request mein hai, toh sirf utne records lo
         if ($limit) {
             $query->limit($limit);
         }
 
-        // 3. Get and Format
         return $query->get()->map->toFormattedArray();
     }
 }

@@ -25,28 +25,10 @@ class SupplierController extends Controller
         $authLayout = $this->getAuthLayout($request->route()->getName());
 
         if ($request->ajax()) {
-            $suppliers = Supplier::with('user')->applyFilters($request)->get()->mapWithKeys(function ($item) {
-                return [
-                    $item->id => [
-                        'id' => $item->id,
-                        'image' => $item->user->profile_picture,
-                        'name' => $item->supplier_name,
-                        'details' => [
-                            'Urdu Title' => $item->urdu_title,
-                            'Phone' => $item->phone_number,
-                            'Balance' => $item->balance,
-                        ],
-                        'user' => $item->user,
-                        'oncontextmenu' => 'generateContextMenu(event)',
-                        'onclick' => 'generateModal(this)',
-                        'date' => $item->date,
-                        'data' => $item,
-                        'categories' => $item->Categories,
-                        'profile' => true,
-                        'visible' => true,
-                    ]
-                ];
-            })->values();
+            $suppliers = Supplier::with('user')
+                ->orderByDesc('id')
+                ->applyFilters($request);
+
             return response()->json(['data' => $suppliers, 'authLayout' => $authLayout]);
         }
 
@@ -85,7 +67,7 @@ class SupplierController extends Controller
         //     return response()->json($suppliers_options);
         // }
 
-        $suppliers = Supplier::with('user')->orderBy('id', 'desc')->get();
+        // $suppliers = Supplier::with('user')->orderBy('id', 'desc')->get();
 
         $supplier_categories = Setup::where('type','supplier_category')->get();
 
@@ -94,7 +76,7 @@ class SupplierController extends Controller
             $categories_options[(int)$supplier_category->id] = ['text' => $supplier_category->title];
         }
 
-        return view("suppliers.index", compact('suppliers', 'categories_options', 'authLayout'));
+        return view("suppliers.index", compact( 'categories_options', 'authLayout'));
     }
 
     /**
