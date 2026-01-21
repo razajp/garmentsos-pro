@@ -10,6 +10,7 @@ use App\Models\PaymentProgram;
 use App\Models\PhysicalQuantity;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -153,7 +154,6 @@ class OrderController extends Controller
             'netAmount' => 'required|string',
             'articles' => 'required|json',
             'order_no' => 'required|string',
-            'generateInvoiceAfterSave' => 'integer|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -220,15 +220,59 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
-        //
+        $order->load([
+            'customer.city',
+            'articles.article',
+        ]);
+
+        return view('orders.edit', compact('order'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Order $order)
     {
-        //
+        if (!$this->checkRole(['developer', 'owner', 'admin', 'accountant'])) {
+            return redirect(route('home'))
+                ->with('error', 'You do not have permission to access this page.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'discount'   => 'required|integer|min:0',
+            'netAmount'  => 'required|string',
+            'articles'   => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        DB::transaction(function () use ($request, $order) {
+
+            $netAmount = (int) str_replace(',', '', $request->netAmount);
+
+            // Update order
+            $order->update([
+                'netAmount' => $netAmount,
+                'discount'  => $request->discount,
+            ]);
+
+            // Reset order articles
+            $order->articles()->delete();
+
+            $articles = is_string($request->articles) ? json_decode($request->articles, true) : $request->articles;
+
+            foreach ($articles as $article) {
+                OrderArticles::create([
+                    'order_id'    => $order->id,
+                    'article_id'  => $article['id'],
+                    'description' => $article['description'] ?? null,
+                    'ordered_pcs' => $article['ordered_pcs'] ?? 0,
+                ]);
+            }
+
+            $order->paymentPrograms()->update(['amount' => $netAmount,]);
+        });
+
+        return redirect()->route('orders.index')->with('success', 'Order updated successfully. Order No: ' . $order->order_no);
     }
 
     /**

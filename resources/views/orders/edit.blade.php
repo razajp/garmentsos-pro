@@ -9,9 +9,10 @@
     </div>
 
     <!-- Form -->
-    <form id="form" action="{{ route('orders.store') }}" method="post" enctype="multipart/form-data"
+    <form id="form" action="{{ route('orders.update', ['order' => $order->id]) }}" method="post" enctype="multipart/form-data"
         class="bg-[var(--secondary-bg-color)] text-sm rounded-xl shadow-lg p-8 border border-[var(--glass-border-color)]/20 pt-14 max-w-4xl mx-auto  relative overflow-hidden">
         @csrf
+        @method('PUT')
         <x-form-title-bar title="Generate Order" />
 
         <!-- Step 1: Generate order -->
@@ -19,14 +20,16 @@
             <div class="flex justify-between gap-4">
                 {{-- order date --}}
                 <div class="w-1/3">
-                    <x-input label="Date" name="date" id="date" type="date" onchange="getDataByDate(this)" validateMax max='{{ now()->toDateString() }}' validateMin min="2024-01-01" required />
+                    <x-input label="Date" name="date" id="date" value="{{ $order->date->format('d-M-Y, D') }}" disabled />
                 </div>
-
-                <input type="hidden" name="generateInvoiceAfterSave" id="generateInvoiceAfterSave" value="0">
 
                 {{-- title --}}
                 <div class="grow">
-                    <x-select label="Customer" name="customer_id" id="customer_id" :options="[]" required showDefault onchange="trackCustomerState(this)"
+                    <x-select label="Customer" name="customer_id" id="customer_id" :options="[
+                        $order->customer->id => [
+                            'text' => $order->customer->customer_name . ' | ' . $order->customer->city->title,
+                        ]
+                    ]" disabled onchange="trackCustomerState(this)"
                         class="grow" withButton btnId="generateOrderBtn" btnText="Select Articles" />
                 </div>
             </div>
@@ -79,6 +82,7 @@
     </form>
 
     <script>
+        let order = @json($order);
         let maxLimitOfArticles = 500;
         let limitOfArticles = 500;
         let selectedArticles = [];
@@ -87,7 +91,7 @@
         let netAmount = 0;
         let articles;
 
-        const lastOrder = @json($last_order);
+        // const lastOrder = [];
         let customerData;
         const articleModalDom = document.getElementById("articleModal");
         const quantityModalDom = document.getElementById("quantityModal");
@@ -107,22 +111,17 @@
 
         function trackCustomerState(elem) {
             if (elem.value != "") {
-                let customerDataDom = elem.parentElement.querySelector('.optionsDropdown li.selected').getAttribute('data-option');
-
-                customerData = JSON.parse(customerDataDom);
-                selectedArticles = [];
-                totalOrderedQuantity = 0;
-                totalOrderAmount = 0;
-                netAmount = 0;
+                customerData = order.customer;
+                selectedArticles =  order.articles.map(a => ({...a, ...(a.article || {}), }));
+                totalOrderedQuantity = selectedArticles.reduce((sum, article) => sum + (article.ordered_pcs || 0), 0) || 0;
+                totalOrderAmount = selectedArticles.reduce((sum, article) => sum + (article.ordered_pcs * article.article.sales_rate || 0), 0) || 0;
+                netAmount = order.netAmount;
                 renderList();
                 generateOrder();
                 renderFinals();
-
-                generateOrderBtn.disabled = false;
-            } else {
-                generateOrderBtn.disabled = true;
             }
         }
+
         let cardData = [];
 
         function basicSearch(searchValue) {
@@ -166,15 +165,15 @@
                 info: `Selected: ${selectedArticles.length}/${maxLimitOfArticles}`,
                 flex_col: true,
                 calcBottom: [
-                    {label: 'Total Quantity - Pcs', name: 'totalShipmentedQty', value: '0', disabled: true},
-                    {label: 'Total Amount - Rs.', name: 'totalShipmentAmount', value: '0.0', disabled: true},
+                    {label: 'Total Quantity - Pcs', name: 'totalOrderQty', value: '0', disabled: true},
+                    {label: 'Total Amount - Rs.', name: 'totalOrderAmount', value: '0.0', disabled: true},
                 ],
             }
 
             createModal(modalData);
 
-            totalQuantityDOM = document.querySelector('#modalForm #totalShipmentedQty');
-            totalAmountDOM = document.querySelector('#modalForm #totalShipmentAmount');
+            totalQuantityDOM = document.querySelector('#modalForm #totalOrderQty');
+            totalAmountDOM = document.querySelector('#modalForm #totalOrderAmount');
 
             document.querySelectorAll('.card .quantity-label').forEach(previousQuantityLabel => {
                 previousQuantityLabel.remove();
@@ -188,11 +187,11 @@
                         card.innerHTML += `
                             <div
                                 class="quantity-label absolute text-xs text-[var(--border-success)] top-1 right-2 h-[1rem]">
-                                ${selectedArticle.orderedQuantity} Pcs
+                                ${selectedArticle.ordered_pcs} Pcs
                             </div>
                         `;
                     } else {
-                        quantityLabelDom.textContent = `${selectedArticle.orderedQuantity} Pcs`;
+                        quantityLabelDom.textContent = `${selectedArticle.ordered_pcs} Pcs`;
                     }
                 });
             }
@@ -302,10 +301,10 @@
                         `;
                     }
 
-                    cardData.orderedQuantity = parseInt(quantity);
+                    cardData.ordered_pcs = parseInt(quantity);
 
                     if (alreadySelectedArticle.length > 0) {
-                        alreadySelectedArticle[0].orderedQuantity = parseInt(quantity);
+                        alreadySelectedArticle[0].ordered_pcs = parseInt(quantity);
                     } else {
                         selectedArticles.push(cardData);
                     }
@@ -370,7 +369,7 @@
             totalOrderedQuantity = 0;
 
             selectedArticles.forEach(selectedArticle => {
-                totalOrderedQuantity += selectedArticle.orderedQuantity;
+                totalOrderedQuantity += selectedArticle.ordered_pcs;
             });
 
             totalOrderedQuantity = new Intl.NumberFormat('en-US').format(totalOrderedQuantity);
@@ -380,7 +379,7 @@
             totalOrderAmount = 0;
 
             selectedArticles.forEach(selectedArticle => {
-                totalOrderAmount += selectedArticle.orderedQuantity * selectedArticle.sales_rate;
+                totalOrderAmount += selectedArticle.ordered_pcs * selectedArticle.sales_rate;
             });
         }
 
@@ -395,6 +394,7 @@
             let discount = document.getElementById('discount').value;
             let discountAmount = totalAmount - (totalAmount * (discount / 100));
             netAmount = discountAmount;
+            renderFinals()
         }
 
         discountDOM.addEventListener('input', calculateNetAmount);
@@ -417,10 +417,10 @@
                     clutter += `
                         <div class="flex justify-between items-center border-t border-gray-600 py-3 px-4">
                             <div class="w-[10%]">${selectedArticle.article_no}</div>
-                            <div class="w-1/6">${selectedArticle.orderedQuantity} pcs</div>
+                            <div class="w-1/6">${selectedArticle.ordered_pcs} pcs</div>
                             <div class="grow capitalize">${selectedArticle.description}</div>
                             <div class="w-1/6">${formatNumbersWithDigits(selectedArticle.sales_rate, 1, 1)}</div>
-                            <div class="w-1/5">${formatNumbersWithDigits(selectedArticle.sales_rate * selectedArticle.orderedQuantity, 1, 1)}</div>
+                            <div class="w-1/5">${formatNumbersWithDigits(selectedArticle.sales_rate * selectedArticle.ordered_pcs, 1, 1)}</div>
                             <div class="w-[10%] text-center">
                                 <button onclick="deselectThisArticle(${index})" type="button" class="text-[var(--danger-color)] text-xs px-2 py-1 rounded-lg hover:text-[var(--h-danger-color)] transition-all duration-300 ease-in-out cursor-pointer">
                                     <i class="fas fa-trash"></i>
@@ -453,7 +453,7 @@
                 return {
                     id: article.id,
                     description: article.description,
-                    ordered_quantity: article.orderedQuantity
+                    ordered_pcs: article.ordered_pcs
                 }
             });
             inputOrderedArticles.value = JSON.stringify(finalArticlesArray);
@@ -494,7 +494,7 @@
         }
 
         function generateOrder() {
-            orderNo = generateOrderNo();
+            // orderNo = generateOrderNo();
             orderDate = getOrderDate();
 
             if (selectedArticles.length > 0) {
@@ -519,9 +519,9 @@
                                 <div class="order-phone text-md leading-none">${customerData.phone_number}</div>
                             </div>
                             <div class="right w-50 my-auto text-right text-sm text-gray-600 space-y-1.5">
-                                <div class="order-date leading-none">Date: ${orderDate}</div>
-                                <div class="order-number leading-none capitalize font-medium">Order No.: ${orderNo}</div>
-                                <input type="hidden" name="order_no" value="${orderNo}" />
+                                <div class="order-date leading-none">Date: {{ $order->date }}}</div>
+                                <div class="order-number leading-none capitalize font-medium">Order No.: {{ $order->order_no }}</div>
+                                <input type="hidden" name="order_no" value="{{ $order->order_no }}}" />
                                 <div class="order-copy leading-none">Order Copy: Customer</div>
                                 <div class="order-copy leading-none">Document: Sales Order</div>
                             </div>
@@ -552,13 +552,13 @@
                                                             <div class="td text-sm font-semibold w-[7%]">${index + 1}.</div>
                                                             <div class="td text-sm font-semibold w-[13%]">${article.article_no}</div>
                                                             <div class="td text-sm font-semibold grow">${article.description}</div>
-                                                            <div class="td text-sm font-semibold w-[10%]">${article.orderedQuantity}</div>
-                                                            <div class="td text-sm font-semibold w-[10%]">${article?.pcs_per_packet ? Math.floor(article.orderedQuantity / article.pcs_per_packet) : 0}</div>
+                                                            <div class="td text-sm font-semibold w-[10%]">${article.ordered_pcs}</div>
+                                                            <div class="td text-sm font-semibold w-[10%]">${article?.pcs_per_packet ? Math.floor(article.ordered_pcs / article.pcs_per_packet) : 0}</div>
                                                             <div class="td text-sm font-semibold w-[10%]">
                                                                 ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(article.sales_rate)}
                                                             </div>
                                                             <div class="td text-sm font-semibold w-[10%]">
-                                                                ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(parseInt(article.sales_rate) * article.orderedQuantity)}
+                                                                ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(parseInt(article.sales_rate) * article.ordered_pcs)}
                                                             </div>
                                                             <div class="td text-sm font-semibold text-center w-[8%]"></div>
                                                         </div>
@@ -574,22 +574,22 @@
                             <div id="order-total" class="tr flex justify-between w-full px-2 gap-2 text-sm">
                                 <div class="total flex justify-between items-center border border-gray-600 rounded-lg py-2 px-4 w-full">
                                     <div class="text-nowrap">Total Quantity</div>
-                                    <div class="w-1/4 text-right grow">${totalQuantityDOM.value}</div>
+                                    <div class="w-1/4 text-right grow">${totalQuantityDOM?.value || 0}</div>
                                 </div>
                                 <div class="total flex justify-between items-center border border-gray-600 rounded-lg py-2 px-4 w-full">
                                     <div class="text-nowrap">Total Amount</div>
-                                    <div class="w-1/4 text-right grow">${totalAmountDOM.value}</div>
+                                    <div class="w-1/4 text-right grow">${totalAmountDOM?.value || 0}</div>
                                 </div>
                             </div>
                             <div id="order-total" class="tr flex justify-between w-full px-2 gap-2 text-sm">
                                 <div class="total flex justify-between items-center border border-gray-600 rounded-lg py-2 px-4 w-full">
                                     <div class="text-nowrap">Discount - %</div>
-                                    <div class="w-1/4 text-right grow">${discountDOM.value}</div>
+                                    <div class="w-1/4 text-right grow">${discountDOM?.value || 0}</div>
                                 </div>
                                 <div
                                     class="total flex justify-between items-center border border-gray-600 rounded-lg py-2 px-4 w-full">
                                     <div class="text-nowrap">Net Amount</div>
-                                    <div class="w-1/4 text-right grow">${finalNetAmount.value}</div>
+                                    <div class="w-1/4 text-right grow">${finalNetAmount?.value || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -610,22 +610,24 @@
         let cardsDom;
         let cardsDataArray = [];
 
-        function getDataByDate(inputElem) {
+        function getDataByDate() {
             $.ajax({
                 url: '{{ route("orders.create") }}',
                 method: 'GET',
                 data: {
-                    date: inputElem.value,
+                    date: '{{ $order->date }}',
                 },
-                success: function(response) {
-                    populateOptions(response.customers_options);
+                success: function (response) {
                     articles = response.articles || [];
+                    generateOrderBtn.disabled = false;
                 },
-                error: function() {
-                    alert('Error submitting form');
+                error: function () {
+                    alert('Error fetching data');
                 }
             });
         }
+
+        getDataByDate()
 
         function populateOptions(customers_options) {
             const customerSelectDom = document.getElementById('customer_id');
@@ -663,7 +665,7 @@
                     // Add new label with ordered quantity
                     card.innerHTML += `
                         <div class="quantity-label absolute text-xs text-[var(--border-success)] top-1 right-2 h-[1rem]">
-                            ${selectedCard.orderedQuantity} Pcs
+                            ${selectedCard.ordered_pcs} Pcs
                         </div>
                     `;
                 }

@@ -913,6 +913,7 @@ function createModal(data, animate = 'animate') {
         if (data.user?.status || data.status) {
             let status = data.user?.status ?? data.status;
             const [bgColor, hoverBgColor, textColor] = statusColor[status == 'active' ? status = 'in_active' : status = 'active'] || statusColor.inactive;
+
             clutter += `
                 <div id="ac_in_modal">
                     <input type="hidden" id="user_id" name="user_id" value="${data.user?.id ?? data.uId}">

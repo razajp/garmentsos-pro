@@ -215,9 +215,13 @@
                 x: e.pageX,
                 y: e.pageY,
                 actions: [
-                    {id: 'print', text: 'Print Order', onclick: 'printOrder(this)'}
+                    {id: 'print', text: 'Print Order', onclick: 'printOrder(this)'},
                 ]
             };
+
+            if (data.status == 'pending') {
+                contextMenuData.actions.push({id: 'edit', text: 'Edit', dataId: data.id})
+            }
 
             createContextMenu(contextMenuData);
         }
@@ -229,8 +233,12 @@
                 id: 'modalForm',
                 preview: {type: 'order', data: data.data, document: 'Sales Order'},
                 bottomActions: [
-                    {id: 'print', text: 'Print Order', onclick: 'printOrder(this)'}
+                    {id: 'print', text: 'Print Order', onclick: 'printOrder(this)'},
                 ],
+            }
+
+            if (data.status == 'pending') {
+                modalData.bottomActions.push({id: 'edit', text: 'Edit', dataId: data.id})
             }
 
             createModal(modalData);
