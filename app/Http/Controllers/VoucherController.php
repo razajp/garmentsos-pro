@@ -86,7 +86,7 @@ class VoucherController extends Controller
         if ($request->ajax()) {
             $supplier_id = $request->supplier_id;
             $paymentMethod = $request->payment_method;
-            $date = $request->date;
+            $date = $request->date . ' 00:00:00';
             $payments_options = [];
 
             if ($paymentMethod == 'cheque') {

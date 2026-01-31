@@ -44,9 +44,10 @@ trait CustomerPaymentComputed
 
             if ($this->cheque?->supplier) return $this->cheque->supplier->supplier_name;
             if ($this->slip?->supplier)   return $this->slip->supplier->supplier_name;
-            if ($this->bankAccount)   return $this->bankAccount->account_title;
+            if ($this->program && $this->program?->subCategory)   return $this->program?->subCategory?->supplier_name;
             if ($this->cheque?->voucher?->supplier) return $this->cheque?->voucher?->supplier->supplier_name;
             if ($this->slip?->voucher?->supplier)   return $this->slip?->voucher?->supplier->supplier_name;
+            if ($this->bankAccount)   return $this->bankAccount->account_title;
 
             return '-';
         });

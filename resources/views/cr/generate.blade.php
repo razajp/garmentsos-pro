@@ -314,6 +314,9 @@
             document.getElementById('payment').disabled = true;
 
             if (elem.value != '') {
+                console.log(voucher);
+                console.log(elem.value);
+
                 $.ajax({
                     url: '/cr/create',
                     type: 'GET',
@@ -326,6 +329,8 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(response) {
+                        console.log($(response).find('#payment').closest('.selectParent').html());
+
                         $('#payment').closest('.selectParent').html($(response).find('#payment').closest('.selectParent').html());
                         let allPaymentsDOM = document.querySelectorAll('ul[data-for="payment"] li');
                         allPaymentsDOM.forEach(paymentDOM => {
@@ -338,7 +343,7 @@
                                 paymentDOM.remove();
                             };
                         })
-                        if (document.querySelectorAll('ul[data-for="payment"] li').length <= 1) {
+                        if (document.querySelectorAll('ul[data-for="payment"] li').length < 1) {
                             document.getElementById('payment').value = '';
                             document.getElementById('payment').disabled = true;
                             document.getElementById('payment').placeholder = '-- No options available --';
@@ -366,7 +371,7 @@
 
         function addPayment() {
             let currentValue = amountDOM.value.replace(/[^0-9.]/g, ''); // input ko format karke number return karega
-            
+
             if (currentValue > 0) {
                 addedPaymentsArray.push({
                     'bank_account_id': JSON.parse(document.querySelector('ul[data-for="payment"] li.selected').dataset.option || '{}').id,

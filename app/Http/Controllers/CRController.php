@@ -43,9 +43,9 @@ class CRController extends Controller
         $voucher_options = [];
         $payment_options = [];
 
-        $supplier_id = $request->supplier_id;
+        $supplier_id = $request->supplier;
         $method = $request->method;
-        $maxDate = $request->max_date;
+        $maxDate = $request->max_date . ' 00:00:00';
         $payment_options = [];
 
         if (Auth::user()->c_r_type == 'voucher') {
@@ -71,7 +71,7 @@ class CRController extends Controller
         }
 
         if ($method === 'cheque') {
-            $cheques = CustomerPayment::whereNotNull('cheque_no')->with('customer.city')->whereDoesntHave('cheque')->whereNull('bank_account_id')->where('date', '<', $maxDate)->get()->makeHidden('creator');
+            $cheques = CustomerPayment::whereNotNull('cheque_no')->with('customer.city')->whereDoesntHave('cheque')->whereNull('bank_account_id')->where('date', '<=', $maxDate)->get()->makeHidden('creator');
 
             foreach ($cheques as $cheque) {
                 $payment_options[(int)$cheque->id] = [
@@ -80,7 +80,7 @@ class CRController extends Controller
                 ];
             }
         } else if ($method === 'slip') {
-            $slips = CustomerPayment::whereNotNull('slip_no')->with('customer.city')->whereDoesntHave('slip')->whereNull('bank_account_id')->where('date', '<', $maxDate)->get()->makeHidden('creator');
+            $slips = CustomerPayment::whereNotNull('slip_no')->with('customer.city')->whereDoesntHave('slip')->whereNull('bank_account_id')->where('date', '<=', $maxDate)->get()->makeHidden('creator');
 
             foreach ($slips as $slip) {
                 $payment_options[(int)$slip->id] = [
@@ -100,12 +100,11 @@ class CRController extends Controller
                 }
             }
         } else if ($method === 'program') {
-            // ->whereBetween('date', [$voucherDate, $maxDate])
-            $payments = SupplierPayment::where('supplier_id', $supplier_id)->where('method', 'program')->whereNull('voucher_id')->with('program.customer')->get()->makeHidden('creator');
+            $payments = SupplierPayment::where('supplier_id', $supplier_id)->with('program.customer')->where('method', 'program')->whereNull('voucher_id')->where('date', '<=', $maxDate)->get()->makeHidden('creator');
 
             foreach ($payments as $payment) {
                 $payment_options[(int)$payment->id] = [
-                    'text' => ' | Rs. ' . number_format($payment->amount) . ' | ' . $payment->program->customer->customer_name . ' | ' . $payment->program->customer->city->short_title,
+                    'text' => 'Rs. ' . number_format($payment->amount) . ' | ' . $payment->program->customer->customer_name . ' | ' . $payment->program->customer->city->short_title,
                     'data_option' => $payment,
                 ];
             }

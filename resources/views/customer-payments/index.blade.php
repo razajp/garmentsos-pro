@@ -6,10 +6,10 @@
         "Date Range" => [
             "id" => "date_range_start",
             "type" => "date",
-            "value" => now()->startOfMonth()->toDateString(),
+            // "value" => now()->startOfMonth()->toDateString(),
             "id2" => "date_range_end",
             "type2" => "date",
-            "value2" => now()->toDateString(),
+            // "value2" => now()->toDateString(),
             "dataFilterPath" => "date",
         ],
         "Customer Name" => [
@@ -173,6 +173,8 @@
         let authLayout = '{{ $authLayout }}';
 
         function createRow(data) {
+            console.log(data);
+
             return `
                 <div id="${data.id}" oncontextmenu='${data.oncontextmenu || ""}' onclick='${data.onclick || ""}'
                     class="item row relative group flex justify-between border-b border-[var(--h-bg-color)] items-center py-2 cursor-pointer hover:bg-[var(--h-secondary-bg-color)] transition-all fade-in ease-in-out"

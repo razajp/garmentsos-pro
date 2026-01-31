@@ -49,7 +49,7 @@
                 'type' => 'select',
                 'options' => [
                     'Paid' => ['text' => 'Paid'],
-                    'Unpaid' => ['text' => 'Unpaid', 'selected' => true],
+                    'Unpaid' => ['text' => 'Unpaid'],
                     'Overpaid' => ['text' => 'Overpaid'],
                 ],
                 'onchange' => 'runDynamicFilter()',

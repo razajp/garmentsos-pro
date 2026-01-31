@@ -685,7 +685,7 @@
 
                 const dataObject = data.data;
 
-                @if(!request()->is('login'))
+                @if(!request()->is('login') && !request()->is('subscription-expired'))
                     if ((dataObject.type === "user_inactivated" || dataObject.type === "password_reset")
                         && dataObject.id == {{Auth::user()->id}}) {
 
