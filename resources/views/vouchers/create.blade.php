@@ -689,8 +689,8 @@
                     }
                 }
 
-                // if (elem.value == 'program') {
-                //     let paymentSelectDom = document.querySelector(`ul[data-for="program_id"]`);
+                if (elem.value == 'program') {
+                    let paymentSelectDom = document.querySelector(`ul[data-for="program_id"]`);
 
                 //     let allPayments = [];
 
@@ -713,15 +713,18 @@
                 //         document.querySelector('input[name="program_id_name"]').placeholder = '-- Select program --';
                 //     }
 
-                //     document.querySelector('input[name="program_id"]').addEventListener('change', () => {
-                //         let selectedOption = paymentSelectDom.querySelector('li.selected');
-                //         let selectedPayment = JSON.parse(selectedOption.getAttribute('data-option')) || '';
+                    document.querySelector('input[name="program_id"]').addEventListener('change', () => {
+                        let selectedOption = paymentSelectDom.querySelector('li.selected');
+                        let selectedPayment = JSON.parse(selectedOption.getAttribute('data-option')) || '';
 
-                //         selectedDom.value = JSON.stringify(selectedPayment);
-                //         document.getElementById('amount').value = selectedPayment.amount;
-                //         document.getElementById('payment_id').value = selectedPayment.id;
-                //     })
-                // }
+                        console.log(selectedPayment);
+                        
+
+                        selectedDom.value = JSON.stringify(selectedPayment);
+                        document.getElementById('amount').value = selectedPayment.amount;
+                        document.getElementById('payment_id').value = selectedPayment.id;
+                    })
+                }
 
                 // if (elem.value == 'purchase_return') {
                 //     selectedDom = document.querySelector('input[name="selected"]');
