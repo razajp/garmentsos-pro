@@ -823,6 +823,8 @@
                 let clutter = "";
                 paymentDetailsArray.forEach((paymentDetail, index) => {
                     let selected = paymentDetail.selected ? JSON.parse(paymentDetail.selected) : null;
+                    console.log(paymentDetail);
+                    
 
                     clutter += `
                         <div class="flex justify-between items-center border-t border-gray-600 py-3 px-4">
@@ -831,7 +833,7 @@
                                 <div class="w-1/3 capitalize">${paymentDetail.self_account_id_name}</div>
                             @endif
                             <div class="w-1/5 capitalize">${paymentDetail.method}</div>
-                            <div class="w-1/3 capitalize">${selected?.customer ? `${selected?.customer?.customer_name} | ${selected?.customer?.city?.title}` : paymentDetail.bank_account_id_name ?? '-'}</div>
+                            <div class="w-1/3 capitalize">${selected?.customer ? `${selected?.customer?.customer_name} | ${selected?.customer?.city?.title}` : paymentDetail.bank_account_id_name ?? selected?.program ? `${selected?.program?.customer?.customer_name} | ${selected?.program?.customer?.city?.title}` : '-'}</div>
                             <div class="w-1/5 capitalize">${selected?.slip_no ?? selected?.cheque_no ?? selected?.reff_no ?? selected?.transaction_id ?? paymentDetail.cheque_no ?? paymentDetail.reff_no ?? '-'}</div>
                             <div class="w-1/6 capitalize">${selected?.remarks ?? '-'}</div>
                             <div class="w-[15%]">${formatNumbersWithDigits(paymentDetail.amount, 1, 1)}</div>

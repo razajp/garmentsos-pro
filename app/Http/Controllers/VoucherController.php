@@ -134,12 +134,13 @@ class VoucherController extends Controller
                 $payments = SupplierPayment::where('supplier_id', $supplier_id)
                     ->where('method', 'program')
                     ->whereNull('voucher_id')
+                    // ->with('program.customer.city')
                     ->get();
 
                 $payments_options = $payments->map(function ($payment) {
                     return [
                         'id' => (int)$payment->id,
-                        'text' => number_format($payment->amount) . ' | ' . $payment->transaction_id . ' | ' . date('d-M-Y D', strtotime($payment->date)),
+                        'text' => number_format($payment->amount) . ' | ' . ($payment->program->customer->customer_name ?? '-')  . ' | ' . ($payment->program->customer->city->short_title ?? '-') . ' | ' . $payment->transaction_id . ' | ' . date('d-M-Y D', strtotime($payment->date)),
                         'dataset' => $payment,
                     ];
                 })->values()->toArray();
