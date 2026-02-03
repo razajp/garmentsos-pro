@@ -489,6 +489,7 @@
     </div>
 
     <script>
+        let calculations = {};
         // go back and refresh script
         if (window.history.length > 1) {
             document.getElementById('go_back_button').classList.remove('hidden');
